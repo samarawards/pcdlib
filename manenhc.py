@@ -1,9 +1,6 @@
 import numpy as np  
 import matplotlib.pyplot as plt
 import cv2 as cv
-import manimg as img
-
-import numpy as np
 
 # =========================================
 # MANUAL ABS

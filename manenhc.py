@@ -118,6 +118,31 @@ def filter(img, size, mode):
     # kembalikan gambar / return image
     return canvas
 
+
+# =========================================
+# EDGE DETECTION (kalau mau pakai kernel khusus)
+# =========================================
+
+def edge(img, kernelx, kernely):
+
+    # konvolusi sumbu x / x-axis convolution
+    gx = convolution(img, kernelx)
+
+    # konvolusi sumbu y / y-axis convolution
+    gy = convolution(img, kernely)
+
+    # kanvas kosong / empty canvas
+    canvas = np.zeros_like(img, dtype=np.float32)
+
+    # gabung gradien absolut / combine absolute gradients
+    canvas = np.abs(gx) + np.abs(gy)
+
+    # normalisasi ke 0-255 / normalize to 0-255
+    canvas = canvas * 255.0 / np.max(canvas)
+
+    # batas nilai dan konversi / clip values and convert
+    return np.clip(canvas, 0, 255).astype(np.uint8)
+
 # =========================================
 # SMOOTHING
 # =========================================

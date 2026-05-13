@@ -3,6 +3,177 @@ import matplotlib.pyplot as plt
 import cv2 as cv
 import manimg as img
 
+import numpy as np
+
+# =========================================
+# MANUAL ABS
+# =========================================
+
+def manual_abs(arr):
+
+    h, w = arr.shape
+    hasil = np.zeros((h, w), dtype=np.float32)
+
+    for i in range(h):
+        for j in range(w):
+
+            if arr[i, j] < 0:
+                hasil[i, j] = -arr[i, j]
+            else:
+                hasil[i, j] = arr[i, j]
+
+    return hasil
+
+# =========================================
+# MANUAL MAX
+# =========================================
+
+def manual_max(arr):
+
+    h, w = arr.shape
+    maksimum = arr[0, 0]
+
+    for i in range(h):
+        for j in range(w):
+
+            if arr[i, j] > maksimum:
+                maksimum = arr[i, j]
+
+    return maksimum
+
+# =========================================
+# MANUAL SUM
+# =========================================
+
+def manual_sum(arr):
+
+    total = 0
+
+    if len(arr.shape) == 1:
+
+        for i in arr:
+            total += i
+
+    else:
+
+        h, w = arr.shape
+
+        for i in range(h):
+            for j in range(w):
+                total += arr[i, j]
+
+    return total
+
+# =========================================
+# MANUAL ZEROS LIKE
+# =========================================
+
+def manual_zeros_like(img):
+
+    h, w = img.shape
+
+    hasil = []
+
+    for i in range(h):
+
+        baris = []
+
+        for j in range(w):
+            baris.append(0)
+
+        hasil.append(baris)
+
+    return np.array(hasil)
+
+# =========================================
+# MANUAL CLIP
+# =========================================
+
+def manual_clip(arr, min_val, max_val):
+
+    h, w = arr.shape
+
+    hasil = np.zeros((h, w), dtype=np.float32)
+
+    for i in range(h):
+        for j in range(w):
+
+            nilai = arr[i, j]
+
+            if nilai < min_val:
+                hasil[i, j] = min_val
+
+            elif nilai > max_val:
+                hasil[i, j] = max_val
+
+            else:
+                hasil[i, j] = nilai
+
+    return hasil
+
+# =========================================
+# MANUAL MEDIAN
+# =========================================
+
+def manual_median(arr):
+
+    data = []
+
+    h, w = arr.shape
+
+    for i in range(h):
+        for j in range(w):
+            data.append(arr[i, j])
+
+    data.sort()
+
+    n = len(data)
+
+    if n % 2 == 1:
+        return data[n // 2]
+
+    else:
+        tengah1 = data[(n // 2) - 1]
+        tengah2 = data[n // 2]
+
+        return (tengah1 + tengah2) / 2
+
+# =========================================
+# MANUAL FLATTEN / RAVEL
+# =========================================
+
+def manual_ravel(arr):
+
+    hasil = []
+
+    h, w = arr.shape
+
+    for i in range(h):
+        for j in range(w):
+            hasil.append(arr[i, j])
+
+    return hasil
+
+# =========================================
+# MANUAL PAD
+# =========================================
+
+def manual_pad(img, pad):
+
+    h, w = img.shape
+
+    new_h = h + (2 * pad)
+    new_w = w + (2 * pad)
+
+    hasil = np.zeros((new_h, new_w), dtype=img.dtype)
+
+    for i in range(h):
+        for j in range(w):
+
+            hasil[i + pad][j + pad] = img[i][j]
+
+    return hasil
+
 # =========================================
 # NORMALIZE
 # =========================================

@@ -9,7 +9,7 @@ def threshold(image, t=128):
 
     for i in range(h):
         for j in range(w):
-            if image[i, j] >= t:
+            if image[i, j] > t:
                 result[i, j] = 255
             else:
                 result[i, j] = 0

@@ -1,6 +1,8 @@
+import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 import pandas as pd
+import os
 from scipy.stats import entropy
 from skimage.feature import graycomatrix, graycoprops
 
@@ -19,6 +21,20 @@ def normalize(image):
     return ((image - np.min(image)) /
            (np.max(image) - np.min(image)) * 255).astype(np.uint8)
 
+# Ubah ukuran gambar jadi genap
+def even_size(image):
+
+    h, w = image.shape
+
+    # Jika tinggi ganjil
+    if h % 2 != 0:
+        image = image[:-1, :]
+
+    # Jika lebar ganjil
+    if w % 2 != 0:
+        image = image[:, :-1]
+
+    return image
 
 # =========================================================
 # KERNEL HAAR WAVELET
@@ -149,6 +165,8 @@ def upsampling_v(image):
 
 def wavelet(image):
 
+    image = even_size(image)
+    
     # -----------------------------------------
     # LL (Approximation)
     # Frekuensi rendah horizontal & vertical
@@ -196,13 +214,20 @@ def wavelet(image):
     HH = downsampling_v(c2)
 
     # Mengembalikan hasil normalisasi
-    return (
-        normalize(LL),
-        normalize(LH),
-        normalize(HL),
-        normalize(HH)
-    )
+    return (LL, LH, HL, HH)
+    # return (
+    #     normalize(LL),
+    #     normalize(LH),
+    #     normalize(HL),
+    #     normalize(HH)
+    # )
 
+# =========================================================
+# DISPLAY TRANSFORMASI WAVELET LEVEL 1
+# =========================================================
+
+def display_wavelet(subband):
+    return normalize(subband)
 
 # =========================================================
 # DEKOMPOSISI MULTI LEVEL
@@ -229,6 +254,34 @@ def multi_wavelet(image, level=1):
 
     return hasil
 
+def dynamic_decomposition(image, level=5):
+
+    image = even_size(image)
+
+    canvas = image.copy().astype(np.float32)
+
+    current_x = 0
+    current_y = 0
+
+    current = image.copy()
+
+    for i in range(level):
+
+        LL, LH, HL, HH = wavelet(current)
+
+        h, w = LL.shape
+
+        canvas[current_y:current_y+h, current_x:current_x+w] = normalize(LL)
+
+        canvas[current_y:current_y+h, current_x+w:current_x+(w*2)] = normalize(LH)
+
+        canvas[current_y+h:current_y+(h*2), current_x:current_x+w] = normalize(HL)
+
+        canvas[current_y+h:current_y+(h*2), current_x+w:current_x+(w*2)] = normalize(HH)
+
+        current = LL
+
+    return normalize(canvas)
 
 # =========================================================
 # REKONSTRUKSI WAVELET
@@ -294,6 +347,30 @@ def glcm(image, angle=0):
 
     return matriks
 
+# =========================================================
+# GLCM (GRAY LEVEL CO-OCCURRENCE MATRIX) MULTI ANGLES
+# =========================================================
+
+def glcm_all_angles(image):
+
+    hasil = []
+
+    angles = [0, 45, 90, 135]
+
+    for angle in angles:
+
+        matriks = glcm(
+            normalize(image),
+            angle
+        )
+
+        fitur = glcm_features(matriks)
+
+        fitur["angle"] = angle
+
+        hasil.append(fitur)
+
+    return pd.DataFrame(hasil)
 
 # =========================================================
 # EKSTRAKSI FITUR GLCM
@@ -334,3 +411,171 @@ def glcm_features(matriks):
     }
 
     return fitur
+
+# =========================================================
+# DISPLAY FITUR GLCM
+# =========================================================
+
+def glcm_table(title, subbands, angle=0):
+
+    data = []
+
+    for nama, gambar in subbands.items():
+
+        matriks = glcm(
+            normalize(gambar),
+            angle
+        )
+
+        fitur = glcm_features(matriks)
+
+        fitur["subband"] = nama
+
+        data.append(fitur)
+
+    print(title)
+
+    return pd.DataFrame(data)
+
+"""
+CARA PAKAI
+df = wave.glcm_table(
+
+    "FITUR GLCM",
+
+    {
+        "LL": LL,
+        "LH": LH,
+        "HL": HL,
+        "HH": HH
+    },
+
+    angle=0
+)
+
+biar bisa
+{
+    "LL level 3": LL3
+}
+"""
+
+# =========================================================
+# SAVE FITUR
+# =========================================================
+
+def save_features(df, filename):
+
+    df.to_csv(filename, index=False)
+
+# =========================================================
+# DATASET GLCM
+# =========================================================
+
+def dataset_glcm(folder, label, angle=0):
+
+    data = []
+
+    files = os.listdir(folder)
+
+    for file in files:
+
+        path = os.path.join(folder, file)
+
+        img = cv2.imread(path)
+
+        gray = grayscale(img)
+
+        LL, LH, HL, HH = wavelet(gray)
+
+        matriks = glcm(
+            normalize(LL),
+            angle
+        )
+
+        fitur = glcm_features(matriks)
+
+        fitur["filename"] = file
+        fitur["label"] = label
+
+        data.append(fitur)
+
+    return pd.DataFrame(data)
+
+
+# =========================================================
+# COMPARE IMAGE
+# =========================================================
+
+def compare_images(image1, image2):
+
+    diff = cv2.absdiff(
+        normalize(image1),
+        normalize(image2)
+    )
+
+    return np.mean(diff)
+
+"""
+Cara pakai
+score = compare_images(
+    hasil_LL,
+    reference_LL
+)
+"""
+
+# =========================================================
+# DISPLAY WAVE
+# =========================================================
+
+def show_subbands(LL, LH, HL, HH):
+
+    fig, ax = plt.subplots(2, 2, figsize=(8,8))
+
+    ax[0,0].imshow(normalize(LL), cmap='gray')
+    ax[0,0].set_title("LL")
+
+    ax[0,1].imshow(normalize(LH), cmap='gray')
+    ax[0,1].set_title("LH")
+
+    ax[1,0].imshow(normalize(HL), cmap='gray')
+    ax[1,0].set_title("HL")
+
+    ax[1,1].imshow(normalize(HH), cmap='gray')
+    ax[1,1].set_title("HH")
+
+    for a in ax.ravel():
+        a.axis('on')
+
+    plt.tight_layout()
+    plt.show()
+
+# =========================================================
+# SAVE WAVE
+# =========================================================
+
+def save_subbands(LL, LH, HL, HH, path="hasil"):
+
+    cv2.imwrite(f"{path}_LL.jpg", normalize(LL))
+    cv2.imwrite(f"{path}_LH.jpg", normalize(LH))
+    cv2.imwrite(f"{path}_HL.jpg", normalize(HL))
+    cv2.imwrite(f"{path}_HH.jpg", normalize(HH))
+
+"""
+CARA PAKAI
+import cv2
+from pcdlib import manwave
+
+img = cv2.imread('rinjani.jpg')
+
+gray = manwave.grayscale(img)
+
+LL, LH, HL, HH = manwave.wavelet(gray)
+
+hasil = manwave.reconstruct(LL, LH, HL, HH)
+
+mat = manwave.glcm(LL, 0)
+
+fitur = manwave.glcm_features(mat)
+
+print(fitur)
+"""

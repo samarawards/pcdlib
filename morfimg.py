@@ -27,6 +27,13 @@ kernel_x = np.array([
     [1,0,0,0,1]
 ], dtype=np.uint8)
 
+kernel = np.array([
+    [0,0,1,1,1],
+    [0,0,1,1,1],
+    [1,1,1,1,1],
+    [1,1,1,0,0],
+    [1,1,1,0,0]
+])
 
 # =========================================================
 # THRESHOLDING
@@ -44,11 +51,22 @@ def threshold(image, batas):
         for j in range(kolom):
 
             if image[i, j] > batas:
-                hasil[i, j] = 255
-            else:
                 hasil[i, j] = 0
+            else:
+                hasil[i, j] = 255
 
     return hasil
+
+def threshold_kad(img, batas):
+    baris, kolom = img.shape
+    canvas = np.zeros_like(img, dtype=np.uint8)
+    for i in range(baris):
+        for j in range(kolom):
+            if img[i, j] > batas:
+                canvas[i, j] = 255
+            elif img[i, j] <= batas:
+                canvas[i, j] = 0
+    return canvas
 
 
 # =========================================================
